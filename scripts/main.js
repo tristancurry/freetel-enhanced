@@ -14,11 +14,17 @@ let a_screen = 0; //angle of rotation of screen about vertical axis through cent
 
 //Initial voltages. These are user adjustable.
 let V_accelerator = 1000; //where outlet is positive
-let V_plates = 2000; //where top is most positive
+let V_plates = 1000; //where top is most positive
 
 //Initial coil current. User adjustable.
-let I_coils = 3; 
+let I_coils = 2; 
 
+//time slowdown factor
+let time_slowdown = 1e-6;
+
+
+//number of calculation cycles per frame
+let physics_steps = 10;
 
 //field calculations
 //this could be written as vector equations or simply assume this is the field in the 'direction of uniformity'.
@@ -68,11 +74,10 @@ Particle.prototype.update = function (fields = {E: {x:0,y:0,z:0}}, time_step = 1
     if (this.alive) {
         let accn = {x:0, y:0, z:0};
         for (let f in fields) {
-            console.log(f);
             if (f == "E") {
                 let fE = fields[f];
                 for (let dir in fE) {
-                    accn[dir] += this.q*fE[dir];
+                    accn[dir] += this.q*fE[dir]/this.mass;
                 }
             } else if (f == "B") {
                 //vx Bz => ay
@@ -87,7 +92,7 @@ Particle.prototype.update = function (fields = {E: {x:0,y:0,z:0}}, time_step = 1
                 accn_B.y = -1*this.vel.x*fB.z;
                 accn_B.z = this.vel.x*fB.y;
                 for (let dir in accn_B) {
-                    accn_B[dir]*=this.q;
+                    accn_B[dir]*=this.q/this.mass;
                     accn[dir] += accn_B[dir];
                 }
             }
@@ -98,5 +103,21 @@ Particle.prototype.update = function (fields = {E: {x:0,y:0,z:0}}, time_step = 1
             this.pos[dir] += this.vel[dir]*time_step;
         }
     }
-
 }
+
+let fieldies = calculate_fields();
+// let electron_speed = calculate_charge_velocity(V_accelerator, q_e, m_e);
+let party = new Particle();
+party.vel.x = calculate_charge_velocity(V_accelerator, party.q, party.mass);
+
+
+function animate () {
+    for (let i  = 0; i < physics_steps; i++) {
+        party.update(fieldies, (1/60)*time_slowdown/physics_steps);
+    }
+
+    console.log(party.vel);
+    requestAnimationFrame(animate);
+}
+
+animate();
