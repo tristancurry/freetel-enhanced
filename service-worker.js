@@ -1,9 +1,10 @@
-let CACHE_NAME = 'thisApplication-cache-001';
+let CACHE_NAME = 'thisApplication-cache-002';
 let urlsToCache = [
 	'index.html',
 	'manifest.json',
 	'css/styles.css',
-	'scripts/swHandling.js'
+	'scripts/swHandling.js',
+  'scripts/main.js',
   'images/icon_192.png',
   'images/icon_512.png'
 ];
