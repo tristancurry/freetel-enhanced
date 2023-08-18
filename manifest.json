@@ -1,8 +1,8 @@
 {
-	"name": "<nameGoesHere>",
-	"short_name": "<nameGoesHere>",
+	"name": "Freetel 2",
+	"short_name": "Freetel 2",
 	"display": "standalone",
-	"scope": "../mainDirectoryOfApp",
+	"scope": "../",
 	"start_url": "index.html",
 	"theme_color": "#999999",
 	"background_color": "#222222",
