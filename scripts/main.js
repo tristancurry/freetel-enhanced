@@ -97,8 +97,6 @@ Particle.prototype.update = function (fields = {E: {x:0,y:0,z:0}}, time_step = 1
             this.vel[dir] += accn[dir]*time_step;
             this.pos[dir] += this.vel[dir]*time_step;
         }
-
-
     }
 
 }
