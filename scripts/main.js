@@ -1,8 +1,8 @@
-let canvas_exp = document.createElement('canvas');
+let canvas_exp = document.getElementById('canvas_exp');
 canvas_exp.setAttribute('width', 600);
 canvas_exp.setAttribute('height', 300);
 canvas_exp.style.backgroundColor = 'rgb(0,0,100)';
-document.body.appendChild(canvas_exp);
+
 
 let ctx_exp = canvas_exp.getContext('2d');
 
@@ -20,12 +20,13 @@ let n_coils = 320; // number of turns in coil
 let d_plates = 0.05; // separation of screen plates, metres
 let l_screen = 0.10; //length of screen, metres
 let aspect_ratio = l_screen/d_plates;
-let a_screen = 0; //angle of rotation of screen about vertical axis through centres of plates, degrees
-let pos_injection = {x:0, y: 0.0, z:0}; //position in plate region where particles enter
+let a_screen = 0.01; //angle of rotation of screen about vertical axis through centres of plates, degrees
+let pos_injection = {x:0, y: 0.0, z:-0.0005}; //position in plate region where particles enter
 let az_injection = 0; //azimuth angle for injection (degrees clockwise about y-axis)
 let alt_injection = 0; //altitude angle for injection (degrees ccw about z-axis)
 let dir_injection = {x: Math.cos(toRadians(alt_injection))*Math.cos(toRadians(az_injection)), y: -1*Math.sin(toRadians(alt_injection)), z: Math.cos(toRadians(alt_injection))*Math.sin(toRadians(az_injection))};
-let direction_variability = {x:0.00, y:0.02, z: 0.05};
+let pos_variability = {x:0, y:0.0001, z: 0.001};
+let direction_variability = {x:0.00, y:0.01, z: 0.1};
 let speed_variability = 0.02;
 
 //coordinate setup for 'experiment region'. Its z-extent is the same as the distance between the plates.
@@ -52,7 +53,14 @@ let time_slowdown = 1e-9;
 //number of calculation cycles per frame
 let physics_steps = 10;
 
+//screen equation calculation
+function calculate_screen_equation () {
+    let slope = -1*Math.tan(toRadians(a_screen));
+    let intercept = -1*slope*l_screen/2;
+console.log(slope, intercept);
+    return {slope, intercept};
 
+}
 
 //field calculations
 //this could be written as vector equations or simply assume this is the field in the 'direction of uniformity'.
@@ -150,28 +158,59 @@ Particle.prototype.unalive = function () {
     this.alive = false;
 }
 
-Particle.prototype.render = function (target_width = l_screen, target_height = d_plates) {
+Particle.prototype.render = function (ctx = ctx_exp) {
     //convert natural position to pixel position.
     ///first, get the natural position as a percentage of screen position.
     let pos_rel = {x:0, y:0, z:0};
     for (let dir in pos_rel) {
         pos_rel[dir] = map_p5(this.pos[dir], exp_region[dir].min, exp_region[dir].max, 0, 1);
     }
-    ctx_exp.beginPath();
-    ctx_exp.strokeStyle = 'rgb(255,255,255)';
-    ctx_exp.ellipse(pos_rel.x*canvas_exp.width, pos_rel.y*canvas_exp.height, 5, 5, 0, 0, 2*Math.PI);
-    ctx_exp.stroke();
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgb(255,255,255)';
+    ctx.ellipse(pos_rel.x*ctx.canvas.width, pos_rel.y*ctx.canvas.height, 5, 5, 0, 0, 2*Math.PI);
+    ctx.stroke();
 }
 
-function createParticle (options, particle_list = []) {
+//Phosphorescent spot object
+function Spot () {
     var options = options || {};
-    this.q = options.q || q_e;
-    if (options.q == 0) {this.q = 0;}
-    this.mass = options.mass || m_e;
-    if (options.mass <= 0) {this.mass = m_e;}
-    this.pos = options.pos || {x:0, y:0, z:0};
-    this.vel = options.vel || {x:0, y:0, z:0};  
+    this.pos = {...options.pos} || {x:0, y:0, z:0};
     this.alive = options.alive || true;
+    this.radius = options.radius || 3;
+    if(options.radius == 0) {this.radius = 0;}
+    this.colour = options.colour || 'rgb(255,0,100)';
+    this.decay_time = options.decay_time || 2; //seconds
+    this.decay_timer = 0;
+}
+
+Spot.prototype.update = function (time_step = 1/60) {
+    this.decay_timer += time_step;
+    if(this.decay_timer >= this.decay_time) {
+        this.unalive();
+    }
+}
+
+Spot.prototype.render = function (ctx = ctx_exp) {
+    //convert natural position to pixel position.
+    ///first, get the natural position as a percentage of screen position.
+    let pos_rel = {x:0, y:0, z:0};
+    for (let dir in pos_rel) {
+        pos_rel[dir] = map_p5(this.pos[dir], exp_region[dir].min, exp_region[dir].max, 0, 1);
+    }
+    ctx.fillStyle = this.colour;
+    ctx.beginPath();
+    ctx.ellipse(pos_rel.x*ctx.canvas.width, pos_rel.y*ctx.canvas.height, this.radius, this.radius, 0, 0, 2*Math.PI);
+    ctx.stroke();
+}
+
+Spot.prototype.unalive = function () {
+    this.alive = false;
+}
+
+
+
+
+function createParticle (options, particle_list = []) {
     let p = new Particle(options);
 
     let idx = particle_list.findIndex((particle) => particle.alive == false);
@@ -181,6 +220,19 @@ function createParticle (options, particle_list = []) {
 
     } else {
         particle_list[idx] = p;
+    }
+
+}
+
+function createSpot (options, spot_list = []) {
+    let s = new Spot(options);
+    let idx = spot_list.findIndex((spot) => spot.alive == false);
+
+    if(idx < 0) {
+        spot_list.push(s);
+
+    } else {
+        spot_list[idx] = s;
     }
 
 }
@@ -292,13 +344,16 @@ slider_I_coils.dispatchEvent(new Event('input'));
 
 
 let particles = [];
+let spots = [];
 
 
 
 
 let particle_release_timer = 0;
-let particle_release_delay = 10; //how many frames to wait before releasing a particle
+let particle_release_delay = 5; //how many frames to wait before releasing a particle
 let dt = (1/60)*time_slowdown/physics_steps;
+
+let screen_params = calculate_screen_equation();
 
 
 function animate () {
@@ -308,9 +363,12 @@ function animate () {
     if (particle_release_timer == 0 && V_accelerator > 0) {
         let p_speed = calculate_charge_velocity(V_accelerator, q_e, m_e) * (1 + speed_variability*(-0.5 + Math.random()));
         let p_vel = {x:0,y:0,z:0};
+        let p_pos = {x:0, y:0, z:0};
         for (let dir in dir_injection) {
-            p_vel[dir] = p_speed*dir_injection[dir]*(1 + (direction_variability[dir]*(-0.5 + Math.random())));
+            p_vel[dir] = p_speed*(dir_injection[dir] + (direction_variability[dir]*(-0.5 + Math.random())));
+            p_pos[dir] = pos_injection[dir] + (-0.5*Math.random()*pos_variability[dir]);
         }
+
         createParticle({pos: pos_injection, vel: p_vel}, particles);
 
     }
@@ -328,15 +386,30 @@ function animate () {
                         particle.unalive();
                     } 
                 }
+                if (
+                    particle.pos.x >= (1 - Math.cos(toRadians(a_screen)))*l_screen/2 &&
+                    particle.pos.x <= (1 + Math.cos(toRadians(a_screen)))*l_screen/2 &&
+                    particle.pos.z >= screen_params.slope*particle.pos.x + screen_params.intercept
+                ) {
+
+                    particle.unalive();
+                    createSpot({pos: particle.pos}, spots);
+                }
             }
         }
 
     }
-    for (j = 0, l = particles.length; j < l; j++) {
-        if(particles[j].alive) {
-            particles[j].render();
-        }
 
+    for (i = 0, l = particles.length; i < l; i++) {
+        if(particles[i].alive) {
+            particles[i].render();
+        }
+    }
+
+    for (i = 0, l = spots.length; i < l; i++) {
+        if (spots[i].alive) {
+            spots[i].render();
+        }
     }
 
     particle_release_timer = (particle_release_timer + 1)%particle_release_delay;
