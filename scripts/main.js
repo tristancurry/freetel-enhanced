@@ -7,7 +7,6 @@ document.body.appendChild(canvas_exp);
 let ctx_exp = canvas_exp.getContext('2d');
 
 
-
 //World Parameters
 
 //Physical constants
@@ -23,7 +22,7 @@ let l_screen = 0.10; //length of screen, metres
 let aspect_ratio = l_screen/d_plates;
 let a_screen = 0; //angle of rotation of screen about vertical axis through centres of plates, degrees
 let pos_injection = {x:0, y: 0.0, z:0}; //position in plate region where particles enter
-let az_injection = 35; //azimuth angle for injection (degrees clockwise about y-axis)
+let az_injection = 0; //azimuth angle for injection (degrees clockwise about y-axis)
 let alt_injection = 0; //altitude angle for injection (degrees ccw about z-axis)
 let dir_injection = {x: Math.cos(toRadians(alt_injection))*Math.cos(toRadians(az_injection)), y: -1*Math.sin(toRadians(alt_injection)), z: Math.cos(toRadians(alt_injection))*Math.sin(toRadians(az_injection))};
 
@@ -95,8 +94,9 @@ let map_p5 = function (value, oldMin, oldMax, newMin, newMax) {
 }
 
 
-// function createParticles
 
+
+//Particle object
 
 function Particle (options) {
     var options = options || {};
@@ -164,6 +164,20 @@ Particle.prototype.render = function (target_width = l_screen, target_height = d
     ctx_exp.ellipse(pos_rel.x*canvas_exp.width, pos_rel.y*canvas_exp.height, 5, 5, 0, 0, 2*Math.PI);
     ctx_exp.stroke();
 }
+
+//Control logic
+let slider_V_acc = document.getElementById('slider_V_acc');
+slider_V_acc.addEventListener('change', () => {
+    V_acc = slider_V_acc.value;    
+});
+
+let slider_V_plates = document.getElementById('slider_V_plates');
+slider_V_plates.addEventListener('input', () => {
+    V_plates = slider_V_plates.value;
+    console.log(V_plates);
+    fieldies = calculate_fields();
+});
+
 
 
 //Initialise simulation
