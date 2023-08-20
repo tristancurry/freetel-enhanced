@@ -25,6 +25,8 @@ let pos_injection = {x:0, y: 0.0, z:0}; //position in plate region where particl
 let az_injection = 0; //azimuth angle for injection (degrees clockwise about y-axis)
 let alt_injection = 0; //altitude angle for injection (degrees ccw about z-axis)
 let dir_injection = {x: Math.cos(toRadians(alt_injection))*Math.cos(toRadians(az_injection)), y: -1*Math.sin(toRadians(alt_injection)), z: Math.cos(toRadians(alt_injection))*Math.sin(toRadians(az_injection))};
+let direction_variability = {x:0.00, y:0.02, z: 0.05};
+let speed_variability = 0.02;
 
 //coordinate setup for 'experiment region'. Its z-extent is the same as the distance between the plates.
 let exp_region = {
@@ -39,10 +41,9 @@ let V_accelerator = 1000; //where outlet is positive
 let V_plates = 2000; //where top is most positive
 
 //Initial coil current. User adjustable.
-let I_coils = 0; 
+let I_coils = 2; 
 
-let I_req = Math.sqrt(m_e/(2*V_accelerator*q_e))*V_plates*R_coils/((0.8**1.5)*mu_0*n_coils*d_plates);
-console.log(I_req);
+
 
 //time slowdown factor
 let time_slowdown = 1e-9;
@@ -70,6 +71,8 @@ function calculate_fields () { //this could be called every frame. Or, triggered
     let E = {x: 0, y: calculate_E_field (V_plates, d_plates), z: 0};
     let B = {x: 0, y:0, z: calculate_B_field (n_coils, I_coils, R_coils)};
     let fields = {E, B};
+    let I_req = Math.sqrt(m_e/(2*V_accelerator*q_e))*V_plates*R_coils/((0.8**1.5)*mu_0*n_coils*d_plates);
+console.log(`Under these conditions, I_coils needed for zero deflection is ${I_req.toFixed(3)}A`);
     return(fields);
 }
 
@@ -122,14 +125,10 @@ Particle.prototype.update = function (fields = {E: {x:0,y:0,z:0}}, time_step = 1
                     accn[dir] += this.q*fE[dir]/this.mass;
                 }
             } else if (f == "B") {
-                //vx Bz => ay
-                //vx By => -az
-                //vy Bx => az
-                //vy Bz => -ax
-                //vz Bx => -ay
-                //vz By => ax
+
                 let fB = fields[f];
                 let accn_B = {x:0,y:0,z:0};
+                //do cross-product of particle velocity with B-field
                 accn_B.x = this.vel.y*fB.z;
                 accn_B.y = -1*this.vel.x*fB.z;
                 accn_B.z = this.vel.x*fB.y;
@@ -190,9 +189,20 @@ function createParticle (options, particle_list = []) {
 
 let check_V_sync = document.getElementById('check_V_sync');
 let V_syncing = false;
+check_V_sync.addEventListener('change', () => {
+    slider_V_plates.dispatchEvent(new Event('input'));
+});
 
 let reverse_V_plates = document.getElementById('reverse_V_plates');
 let reverse_I_coil = document.getElementById('reverse_I_coil');
+
+reverse_V_plates.addEventListener('change', () => {
+    slider_V_plates.dispatchEvent(new Event('input'));
+});
+
+reverse_I_coils.addEventListener('change', () => {
+    slider_I_coils.dispatchEvent(new Event('input'));
+});
 
 let display_V_acc = document.getElementById('display_V_acc');
 let display_V_plates = document.getElementById('display_V_plates');
@@ -259,10 +269,23 @@ slider_I_coils.addEventListener('input', () => {
 
 //Initialise simulation
 
+
+
 let fieldies = calculate_fields();
 if(V_plates < 0) {
-    
+    reverse_V_plates.checked = true;
 }
+if(I_coils < 0) {
+    reverse_I_coils.checked = true;
+}
+
+slider_V_acc.value = V_accelerator;
+slider_V_plates.value = Math.abs(V_plates);
+slider_I_coils.value = Math.abs(I_coils)
+
+slider_V_acc.dispatchEvent(new Event('input'));
+slider_V_plates.dispatchEvent(new Event('input'));
+slider_I_coils.dispatchEvent(new Event('input'));
 
 
 
@@ -283,10 +306,10 @@ function animate () {
     ctx_exp.clearRect(0,0, canvas_exp.width, canvas_exp.height);
 
     if (particle_release_timer == 0 && V_accelerator > 0) {
-        let p_speed = calculate_charge_velocity(V_accelerator, q_e, m_e);
+        let p_speed = calculate_charge_velocity(V_accelerator, q_e, m_e) * (1 + speed_variability*(-0.5 + Math.random()));
         let p_vel = {x:0,y:0,z:0};
         for (let dir in dir_injection) {
-            p_vel[dir] = p_speed*dir_injection[dir];
+            p_vel[dir] = p_speed*dir_injection[dir]*(1 + (direction_variability[dir]*(-0.5 + Math.random())));
         }
         createParticle({pos: pos_injection, vel: p_vel}, particles);
 
