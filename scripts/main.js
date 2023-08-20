@@ -39,7 +39,7 @@ let V_accelerator = 1000; //where outlet is positive
 let V_plates = 2000; //where top is most positive
 
 //Initial coil current. User adjustable.
-let I_coils = 0.519; 
+let I_coils = 0; 
 
 let I_req = Math.sqrt(m_e/(2*V_accelerator*q_e))*V_plates*R_coils/((0.8**1.5)*mu_0*n_coils*d_plates);
 console.log(I_req);
@@ -49,7 +49,7 @@ let time_slowdown = 1e-9;
 
 
 //number of calculation cycles per frame
-let physics_steps = 100;
+let physics_steps = 10;
 
 
 
@@ -70,7 +70,6 @@ function calculate_fields () { //this could be called every frame. Or, triggered
     let E = {x: 0, y: calculate_E_field (V_plates, d_plates), z: 0};
     let B = {x: 0, y:0, z: calculate_B_field (n_coils, I_coils, R_coils)};
     let fields = {E, B};
-    console.log(fields);
     return(fields);
 }
 
@@ -104,8 +103,8 @@ function Particle (options) {
     if (options.q == 0) {this.q = 0;}
     this.mass = options.mass || m_e;
     if (options.mass <= 0) {this.mass = m_e;}
-    this.pos = options.pos || {x:0, y:0, z:0};
-    this.vel = options.vel || {x:0, y:0, z:0};  
+    this.pos = {...options.pos} || {x:0, y:0, z:0};
+    this.vel = {...options.vel} || {x:0, y:0, z:0};  
     this.alive = options.alive || true;
 }
 
@@ -165,42 +164,159 @@ Particle.prototype.render = function (target_width = l_screen, target_height = d
     ctx_exp.stroke();
 }
 
+function createParticle (options, particle_list = []) {
+    var options = options || {};
+    this.q = options.q || q_e;
+    if (options.q == 0) {this.q = 0;}
+    this.mass = options.mass || m_e;
+    if (options.mass <= 0) {this.mass = m_e;}
+    this.pos = options.pos || {x:0, y:0, z:0};
+    this.vel = options.vel || {x:0, y:0, z:0};  
+    this.alive = options.alive || true;
+    let p = new Particle(options);
+
+    let idx = particle_list.findIndex((particle) => particle.alive == false);
+
+    if(idx < 0) {
+        particle_list.push(p);
+
+    } else {
+        particle_list[idx] = p;
+    }
+
+}
+
 //Control logic
+
+let check_V_sync = document.getElementById('check_V_sync');
+let V_syncing = false;
+
+let reverse_V_plates = document.getElementById('reverse_V_plates');
+let reverse_I_coil = document.getElementById('reverse_I_coil');
+
+let display_V_acc = document.getElementById('display_V_acc');
+let display_V_plates = document.getElementById('display_V_plates');
+let display_I_coils = document.getElementById('display_I_coils');
+
+
+
 let slider_V_acc = document.getElementById('slider_V_acc');
-slider_V_acc.addEventListener('change', () => {
-    V_acc = slider_V_acc.value;    
+slider_V_acc.value = V_accelerator;
+slider_V_acc.addEventListener('input', () => {
+    V_accelerator = parseFloat(slider_V_acc.value);
+    display_V_acc.innerText = V_accelerator.toFixed(3);
+
+    //handle synchronisation
+    if(check_V_sync.checked) {
+        if(!V_syncing) {
+            V_syncing = true;
+            slider_V_plates.value = slider_V_acc.value;
+            //dispatch event to slider_V_plates
+            slider_V_plates.dispatchEvent(new Event('input'));
+        } else {
+            V_syncing = false;
+        }
+    }
 });
+
 
 let slider_V_plates = document.getElementById('slider_V_plates');
+slider_V_plates.value = V_plates
 slider_V_plates.addEventListener('input', () => {
-    V_plates = slider_V_plates.value;
-    console.log(V_plates);
+    let sign = 1;
+    if(reverse_V_plates.checked) {sign = -1;}
+
+    V_plates = sign*slider_V_plates.value;
+    display_V_plates.innerText = V_plates.toFixed(3);
+
     fieldies = calculate_fields();
+
+    //handle synchronisation
+    if(check_V_sync.checked) {
+        if(!V_syncing) {
+            V_syncing = true;
+            slider_V_acc.value = slider_V_plates.value;
+            //dispatch event to slider_V_acc
+            slider_V_acc.dispatchEvent(new Event('input'));
+        } else {
+            V_syncing = false;
+        }
+    }
 });
 
+let slider_I_coils = document.getElementById('slider_I_coils');
+
+
+slider_I_coils.addEventListener('input', () => {
+    let sign = 1;
+    if(reverse_I_coils.checked) {sign = -1;}
+    I_coils = sign*slider_I_coils.value;
+    display_I_coils.innerText = I_coils.toFixed(3);
+
+    fieldies = calculate_fields();
+});
 
 
 //Initialise simulation
 
 let fieldies = calculate_fields();
-// let electron_speed = calculate_charge_velocity(V_accelerator, q_e, m_e);
-let party = new Particle({pos: pos_injection});
-let party_speed = calculate_charge_velocity(V_accelerator, party.q, party.mass);
-for (let dir in dir_injection) {
-    party.vel[dir] = party_speed*dir_injection[dir];
+if(V_plates < 0) {
+    
 }
 
-console.log(party.vel);
+
+
+
+
+let particles = [];
+
+
+
+
+let particle_release_timer = 0;
+let particle_release_delay = 10; //how many frames to wait before releasing a particle
+let dt = (1/60)*time_slowdown/physics_steps;
+
 
 function animate () {
 
     ctx_exp.clearRect(0,0, canvas_exp.width, canvas_exp.height);
 
-    for (let i  = 0; i < physics_steps; i++) {
-        party.update(fieldies, (1/60)*time_slowdown/physics_steps);
+    if (particle_release_timer == 0 && V_accelerator > 0) {
+        let p_speed = calculate_charge_velocity(V_accelerator, q_e, m_e);
+        let p_vel = {x:0,y:0,z:0};
+        for (let dir in dir_injection) {
+            p_vel[dir] = p_speed*dir_injection[dir];
+        }
+        createParticle({pos: pos_injection, vel: p_vel}, particles);
+
     }
 
-    party.render();
+    for (let i  = 0; i < physics_steps; i++) {
+        for (j = 0, l = particles.length; j < l; j++) {
+            let particle = particles[j];
+            if (particle.alive) {
+                particle.update(fieldies, dt);
+                for (let dir in exp_region) {
+                    if(
+                        particle.pos[dir] < exp_region[dir].min - 0.02 ||
+                        particle.pos[dir] > exp_region[dir].max + 0.02
+                    ) {
+                        particle.unalive();
+                    } 
+                }
+            }
+        }
+
+    }
+    for (j = 0, l = particles.length; j < l; j++) {
+        if(particles[j].alive) {
+            particles[j].render();
+        }
+
+    }
+
+    particle_release_timer = (particle_release_timer + 1)%particle_release_delay;
 
     requestAnimationFrame(animate);
 }
