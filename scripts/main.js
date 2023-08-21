@@ -20,12 +20,12 @@ let n_coils = 320; // number of turns in coil
 let d_plates = 0.05; // separation of screen plates, metres
 let l_screen = 0.10; //length of screen, metres
 let aspect_ratio = l_screen/d_plates;
-let a_screen = 0.01; //angle of rotation of screen about vertical axis through centres of plates, degrees
-let pos_injection = {x:0, y: 0.0, z:-0.0005}; //position in plate region where particles enter
-let az_injection = 0; //azimuth angle for injection (degrees clockwise about y-axis)
+let a_screen = 0.2; //angle of rotation of screen about vertical axis through centres of plates, degrees
+let pos_injection = {x:0, y: 0.0, z:-0.001}; //position in plate region where particles enter
+let az_injection = 3.5; //azimuth angle for injection (degrees clockwise about y-axis)
 let alt_injection = 0; //altitude angle for injection (degrees ccw about z-axis)
 let dir_injection = {x: Math.cos(toRadians(alt_injection))*Math.cos(toRadians(az_injection)), y: -1*Math.sin(toRadians(alt_injection)), z: Math.cos(toRadians(alt_injection))*Math.sin(toRadians(az_injection))};
-let pos_variability = {x:0, y:0.0001, z: 0.001};
+let pos_variability = {x:0, y:0.0001, z: 0.005};
 let direction_variability = {x:0.00, y:0.01, z: 0.1};
 let speed_variability = 0.02;
 
@@ -39,19 +39,19 @@ let exp_region = {
 
 //Initial voltages. These are user adjustable.
 let V_accelerator = 1000; //where outlet is positive
-let V_plates = 2000; //where top is most positive
+let V_plates = 000; //where top is most positive
 
 //Initial coil current. User adjustable.
-let I_coils = 2; 
+let I_coils = 0; 
 
 
 
 //time slowdown factor
-let time_slowdown = 1e-9;
+let time_slowdown = 1e-8;
 
 
 //number of calculation cycles per frame
-let physics_steps = 10;
+let physics_steps = 100;
 
 //screen equation calculation
 function calculate_screen_equation () {
@@ -172,14 +172,14 @@ Particle.prototype.render = function (ctx = ctx_exp) {
 }
 
 //Phosphorescent spot object
-function Spot () {
+function Spot (options) {
     var options = options || {};
     this.pos = {...options.pos} || {x:0, y:0, z:0};
     this.alive = options.alive || true;
-    this.radius = options.radius || 3;
+    this.radius = options.radius || 20;
     if(options.radius == 0) {this.radius = 0;}
-    this.colour = options.colour || 'rgb(255,0,100)';
-    this.decay_time = options.decay_time || 2; //seconds
+    this.colour = options.colour || 'rgb(100,200,255)';
+    this.decay_time = options.decay_time || 5; //seconds
     this.decay_timer = 0;
 }
 
@@ -199,8 +199,8 @@ Spot.prototype.render = function (ctx = ctx_exp) {
     }
     ctx.fillStyle = this.colour;
     ctx.beginPath();
-    ctx.ellipse(pos_rel.x*ctx.canvas.width, pos_rel.y*ctx.canvas.height, this.radius, this.radius, 0, 0, 2*Math.PI);
-    ctx.stroke();
+    ctx.ellipse(pos_rel.x*ctx.canvas.width, pos_rel.y*ctx.canvas.height, 3, 3, 0, 0, 2*Math.PI);
+    ctx.fill();
 }
 
 Spot.prototype.unalive = function () {
@@ -350,7 +350,7 @@ let spots = [];
 
 
 let particle_release_timer = 0;
-let particle_release_delay = 5; //how many frames to wait before releasing a particle
+let particle_release_delay = 1; //how many frames to wait before releasing a particle
 let dt = (1/60)*time_slowdown/physics_steps;
 
 let screen_params = calculate_screen_equation();
@@ -392,8 +392,10 @@ function animate () {
                     particle.pos.z >= screen_params.slope*particle.pos.x + screen_params.intercept
                 ) {
 
+                    createSpot({pos: {...particle.pos}}, spots);
+
                     particle.unalive();
-                    createSpot({pos: particle.pos}, spots);
+
                 }
             }
         }
@@ -408,6 +410,7 @@ function animate () {
 
     for (i = 0, l = spots.length; i < l; i++) {
         if (spots[i].alive) {
+            spots[i].update();
             spots[i].render();
         }
     }
