@@ -9,6 +9,9 @@ let ctx_exp = canvas_exp.getContext('2d');
 
 //World Parameters
 
+
+const MAX_PARTICLES = 200;
+
 //Physical constants
 let mu_0 = Math.PI*4.0e-7; //magnetic permeability of vacuum
 let q_e = 1.6e-19; //electronic charge, C
@@ -20,14 +23,15 @@ let n_coils = 320; // number of turns in coil
 let d_plates = 0.05; // separation of screen plates, metres
 let l_screen = 0.10; //length of screen, metres
 let aspect_ratio = l_screen/d_plates;
-let a_screen = 0.2; //angle of rotation of screen about vertical axis through centres of plates, degrees
-let pos_injection = {x:0, y: 0.0, z:-0.001}; //position in plate region where particles enter
-let az_injection = 3.5; //azimuth angle for injection (degrees clockwise about y-axis)
+let a_screen = 0.1; //angle of rotation of screen about vertical axis through centres of plates, degrees
+let pos_injection = {x:0, y: 0.0, z:0}; //position in plate region where particles enter
+let az_injection = 0; //azimuth angle for injection (degrees clockwise about y-axis)
 let alt_injection = 0; //altitude angle for injection (degrees ccw about z-axis)
 let dir_injection = {x: Math.cos(toRadians(alt_injection))*Math.cos(toRadians(az_injection)), y: -1*Math.sin(toRadians(alt_injection)), z: Math.cos(toRadians(alt_injection))*Math.sin(toRadians(az_injection))};
-let pos_variability = {x:0, y:0.0001, z: 0.005};
-let direction_variability = {x:0.00, y:0.01, z: 0.1};
+let pos_variability = {x:0, y: 0.0002, z: 0.00017};
+let direction_variability = {x:0.00, y:0.00, z: 0.000};
 let speed_variability = 0.02;
+let phosphor_persistence = 4; //seconds for a spot to remain on the screen
 
 //coordinate setup for 'experiment region'. Its z-extent is the same as the distance between the plates.
 let exp_region = {
@@ -39,7 +43,7 @@ let exp_region = {
 
 //Initial voltages. These are user adjustable.
 let V_accelerator = 1000; //where outlet is positive
-let V_plates = 000; //where top is most positive
+let V_plates = 0; //where top is most positive
 
 //Initial coil current. User adjustable.
 let I_coils = 0; 
@@ -47,17 +51,16 @@ let I_coils = 0;
 
 
 //time slowdown factor
-let time_slowdown = 1e-8;
+let time_slowdown = 1e-6;
 
 
 //number of calculation cycles per frame
-let physics_steps = 100;
+let physics_steps = 10000;
 
 //screen equation calculation
 function calculate_screen_equation () {
     let slope = -1*Math.tan(toRadians(a_screen));
     let intercept = -1*slope*l_screen/2;
-console.log(slope, intercept);
     return {slope, intercept};
 
 }
@@ -217,6 +220,9 @@ function createParticle (options, particle_list = []) {
 
     if(idx < 0) {
         particle_list.push(p);
+        if(particle_list.length >= MAX_PARTICLES) {
+            particle_list.shift();
+        }
 
     } else {
         particle_list[idx] = p;
@@ -350,7 +356,7 @@ let spots = [];
 
 
 let particle_release_timer = 0;
-let particle_release_delay = 1; //how many frames to wait before releasing a particle
+let particle_release_delay = 1; //how many frames to wait before releasing a particle. This will eventually be dictated by a filament current as a per-second rate
 let dt = (1/60)*time_slowdown/physics_steps;
 
 let screen_params = calculate_screen_equation();
@@ -364,12 +370,24 @@ function animate () {
         let p_speed = calculate_charge_velocity(V_accelerator, q_e, m_e) * (1 + speed_variability*(-0.5 + Math.random()));
         let p_vel = {x:0,y:0,z:0};
         let p_pos = {x:0, y:0, z:0};
+
+        //modify dir_injection by random variability ('beam width') in each coordinate axis...
+        let new_dir = {x:0, y:0, z:0};
         for (let dir in dir_injection) {
-            p_vel[dir] = p_speed*(dir_injection[dir] + (direction_variability[dir]*(-0.5 + Math.random())));
-            p_pos[dir] = pos_injection[dir] + (-0.5*Math.random()*pos_variability[dir]);
+            new_dir[dir] = dir_injection[dir] + (direction_variability[dir]*(-0.5 + Math.random()));
+        }
+        //normalise new_dir
+        new_dir_mag = Math.sqrt(new_dir.x**2 + new_dir.y**2 + new_dir.z**2);
+        for (let dir in dir_injection) {
+            new_dir[dir] = new_dir[dir]/new_dir_mag;
         }
 
-        createParticle({pos: pos_injection, vel: p_vel}, particles);
+        for (let dir in new_dir) {
+            p_vel[dir] = p_speed*(new_dir[dir] + (direction_variability[dir]*(-0.5 + Math.random())));
+            p_pos[dir] = pos_injection[dir] + (-0.5 + Math.random())*pos_variability[dir];
+        }
+
+        createParticle({pos: p_pos, vel: p_vel}, particles);
 
     }
 
@@ -390,15 +408,17 @@ function animate () {
                     particle.pos.x >= (1 - Math.cos(toRadians(a_screen)))*l_screen/2 &&
                     particle.pos.x <= (1 + Math.cos(toRadians(a_screen)))*l_screen/2 &&
                     particle.pos.z >= screen_params.slope*particle.pos.x + screen_params.intercept
+                        
                 ) {
 
-                    createSpot({pos: {...particle.pos}}, spots);
+                    createSpot({pos: {...particle.pos}, decay_time: phosphor_persistence}, spots);
 
                     particle.unalive();
 
                 }
             }
         }
+
 
     }
 
