@@ -5,6 +5,7 @@ canvas_exp.style.backgroundColor = 'rgb(0,0,100)';
 
 
 let ctx_exp = canvas_exp.getContext('2d');
+ctx_exp.globalCompositeOperation = "screen";
 
 
 //World Parameters
@@ -181,7 +182,7 @@ function Spot (options) {
     this.alive = options.alive || true;
     this.radius = options.radius || 20;
     if(options.radius == 0) {this.radius = 0;}
-    this.colour = options.colour || 'rgb(100,200,255)';
+    this.colour = options.colour || 'rgba(100,200,255, 0.7)';
     this.decay_time = options.decay_time || 5; //seconds
     this.decay_timer = 0;
 }
