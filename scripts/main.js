@@ -120,6 +120,7 @@ let display_I_coils = document.getElementById('display_I_coils');
 
 
 let slider_V_acc = document.getElementById('slider_V_acc');
+slider_V_acc.max = MAX_VOLTAGE;
 slider_V_acc.value = V_accelerator;
 slider_V_acc.addEventListener('input', () => {
     V_accelerator = parseFloat(slider_V_acc.value);
@@ -140,6 +141,7 @@ slider_V_acc.addEventListener('input', () => {
 
 
 let slider_V_plates = document.getElementById('slider_V_plates');
+slider_V_plates.max = MAX_VOLTAGE;
 slider_V_plates.value = V_plates
 slider_V_plates.addEventListener('input', () => {
     let sign = 1;
@@ -164,6 +166,7 @@ slider_V_plates.addEventListener('input', () => {
 });
 
 let slider_I_coils = document.getElementById('slider_I_coils');
+slider_I_coils.max = MAX_CURRENT;
 
 
 slider_I_coils.addEventListener('input', () => {

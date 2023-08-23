@@ -1,5 +1,7 @@
 //World Parameters
 const MAX_PARTICLES = 500;
+const MAX_VOLTAGE = 5000;
+const MAX_CURRENT = 3;
 
 //Physical constants
 let mu_0 = Math.PI*4.0e-7; //magnetic permeability of vacuum
