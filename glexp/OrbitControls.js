@@ -1340,7 +1340,7 @@ class OrbitControls extends THREE.EventDispatcher {
 
 			if ( position === undefined ) {
 
-				position = new Vector2();
+				position = new THREE.Vector2();
 				pointerPositions[ event.pointerId ] = position;
 
 			}
