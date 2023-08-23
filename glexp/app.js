@@ -27,12 +27,20 @@ const material = new THREE.MeshBasicMaterial({ wireframe: true});
 const cube = new THREE.Mesh(geometry, material);
 scene.add(cube);
 
+const party_geo = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+const party = new THREE.Mesh(party_geo, material);
+scene.add(party);
+
+party.translateX(-5);
+
+
 //Rendering
 container.append(renderer.domElement);
 renderer.render(scene, camera);
 
 function animate() {
     requestAnimationFrame(animate);
+    party.translateX(0.01);
 
     renderer.render(scene, camera);
 }
