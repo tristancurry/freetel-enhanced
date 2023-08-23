@@ -1,8 +1,8 @@
 const container = document.querySelector('#threejs-container');
 
 
-const width = container.innerWidth;
-const height = container.innerHeight;
+const width = container.clientWidth;
+const height = container.clientHeight;
 
 //Scene
 const scene = new THREE.Scene();
@@ -10,7 +10,7 @@ const scene = new THREE.Scene();
 
 //Camera
 const fov = 45 //Field of View
-const aspect = window.innerWidth/window.innerHeight;
+const aspect = container.clientWidth/container.clientHeight;
 const near = 0.1;
 const far = 100;
 const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
@@ -18,7 +18,7 @@ camera.position.set(0, 0, 10);
 
 //Renderer
 const renderer = new THREE.WebGLRenderer();
-renderer.setSize(container.innerWidth, container.innerHeight);
+renderer.setSize(container.clienntWidth, container.clientHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 //Cube makin
