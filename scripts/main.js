@@ -243,10 +243,11 @@ function animate () {
                 if (
                     particle.pos.x >= (1 - Math.cos(toRadians(a_screen)))*l_screen/2 &&
                     particle.pos.x <= (1 + Math.cos(toRadians(a_screen)))*l_screen/2 &&
-                    particle.pos.z >= screen_params.slope*particle.pos.x + screen_params.intercept
-                        
+                    particle.pos.z >= screen_params.slope*particle.pos.x + screen_params.intercept         
                 ) {
-
+                    //back-project the particle's velocity to find out where it intercepted the screen?
+                    //need to find a delta-t for intercept then apply to each component of velocity
+            
                     createSpot({pos: {...particle.pos}, decay_time: phosphor_persistence}, spots);
                     particle.unalive();
 
