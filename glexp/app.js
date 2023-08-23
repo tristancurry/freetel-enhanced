@@ -3,7 +3,7 @@ const height = window.innerHeight;
 
 //Scene
 const scene = new THREE.Scene();
-scene.background = new THREE.Color('#00b140');
+// scene.background = new THREE.Color('#00b140');
 
 //Camera
 const fov = 45 //Field of View
@@ -37,4 +37,6 @@ function animate() {
 
 animate();
 
-const controls = new OrbitControls(camera, renderer.domElement)
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enablePan = false;
+controls.enableZoom = false;
