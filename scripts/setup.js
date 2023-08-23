@@ -18,6 +18,10 @@ let loadScript = (url) => {
 
 
 const scriptURLs = [
+  'scripts/helpers.js',
+  'scripts/config.js',
+  'scripts/particle.js',
+  'scripts/spot.js',
   'scripts/main.js'
 ];
 
