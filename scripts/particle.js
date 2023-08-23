@@ -33,10 +33,18 @@ Particle.prototype.update = function (fields = {E: {x:0,y:0,z:0}}, time_step = 1
                 accn_B.x = this.vel.y*fB.z;
                 accn_B.y = -1*this.vel.x*fB.z;
                 accn_B.z = this.vel.x*fB.y;
+                let velOldSq = (this.vel.x**2) + (this.vel.y**2) + (this.vel.z**2);
                 for (let dir in accn_B) {
                     accn_B[dir]*=this.q/this.mass;
                     this.vel[dir] += accn_B[dir]*time_step;
-
+                }
+                let velNewSq = (this.vel.x**2) + (this.vel.y**2) + (this.vel.z**2);
+                //deal with accidental energy injections by B-field
+                if (velOldSq != velNewSq) {
+                    let speed_reduction = Math.sqrt(velOldSq/velNewSq);
+                    for (let dir in this.vel) {
+                        this.vel[dir] = speed_reduction*this.vel[dir];
+                    }
                 }
             }
         }
