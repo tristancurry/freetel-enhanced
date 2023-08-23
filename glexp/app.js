@@ -1,5 +1,8 @@
-const width = window.innerWidth;
-const height = window.innerHeight;
+const container = document.querySelector('#threejs-container');
+
+
+const width = container.innerWidth;
+const height = container.innerHeight;
 
 //Scene
 const scene = new THREE.Scene();
@@ -15,7 +18,7 @@ camera.position.set(0, 0, 10);
 
 //Renderer
 const renderer = new THREE.WebGLRenderer();
-renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setSize(container.innerWidth, container.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 //Cube makin
@@ -25,7 +28,6 @@ const cube = new THREE.Mesh(geometry, material);
 scene.add(cube);
 
 //Rendering
-const container = document.querySelector('#threejs-container');
 container.append(renderer.domElement);
 renderer.render(scene, camera);
 
@@ -40,3 +42,29 @@ animate();
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enablePan = false;
 controls.enableZoom = false;
+
+const setSize = (container, camera, renderer) => {
+    camera.aspect = container.clientWidth/container.clientHeight;
+    camera.updateProjectionMatrix();
+
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+}
+
+class Resizer {
+    constructor(container, camera, renderer) {
+        setSize(container, camera, renderer);
+
+        window.addEventListener('resize', () => {
+            setSize(container, camera, renderer);
+            this.onResize();
+        });
+    }
+
+    onResize () {}
+}
+
+const resizer = new Resizer(container, camera, renderer);
+resizer.onResize = () => {
+    this.animate();
+};
