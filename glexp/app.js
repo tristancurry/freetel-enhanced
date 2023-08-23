@@ -22,27 +22,77 @@ renderer.setSize(container.clienntWidth, container.clientHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 //Cube makin
-const geometry = new THREE.BoxGeometry(2, 2, 2);
-const material = new THREE.MeshBasicMaterial({ wireframe: true});
-const cube = new THREE.Mesh(geometry, material);
-scene.add(cube);
+const screen_geometry = new THREE.BoxGeometry(9, 5.2, 0.1);
+const screen_material = new THREE.MeshBasicMaterial({ wireframe: true});
+const screen = new THREE.Mesh(screen_geometry, screen_material);
+screen.translateX(-1.5);
+screen.translateZ(-0.05);
+screen.rotateY(2*2*Math.PI/360);
+scene.add(screen);
+
+const emitter_geometry = new THREE.CylinderGeometry(1, 1, 1, 20, 1, true);
+const emitter = new THREE.Mesh(emitter_geometry, screen_material);
+emitter.translateX(6.5);
+emitter.rotateZ(Math.PI/2);
+scene.add(emitter);
 
 const party_geo = new THREE.BoxGeometry(0.1, 0.1, 0.1);
-const party = new THREE.Mesh(party_geo, material);
-scene.add(party);
 
-party.translateX(-5);
+
+
+
+
+function createParticle(particle_list) {
+    let idx = particle_list.findIndex((particle) => particle.alive == false);
+
+    let p = new THREE.Mesh(party_geo, screen_material);
+    p.alive = true;
+    p.translateX(6.5);
+
+    if(idx < 0) {
+        particle_list.push(p);
+        // if(particle_list.length >= MAX_PARTICLES) {
+        //     particle_list.shift();
+        // }
+        scene.add(p);
+        
+    } else {
+        particle_list[idx] = p;
+        scene.add(p);
+    }
+
+
+}
+
+let particles = [];
 
 
 //Rendering
 container.append(renderer.domElement);
 renderer.render(scene, camera);
 
+pTimer = 0;
+pDelay = 50;
+
+
 function animate() {
-    requestAnimationFrame(animate);
-    party.translateX(0.01);
+    pTimer = (pTimer + 1)%pDelay;
+    if(pTimer == 0) {
+        createParticle(particles);
+    }
+
+    for(let i = 0, l = particles.length; i < l; i++) {
+        if(particles[i].alive) {
+            particles[i].translateX(-0.04);
+            if(particles[i].position.x < -10) {
+                particles[i].alive = false;
+                scene.remove(particles[i]);
+            }
+        }
+    }
 
     renderer.render(scene, camera);
+    requestAnimationFrame(animate);
 }
 
 animate();
