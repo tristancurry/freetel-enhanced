@@ -11,7 +11,7 @@ ctx_exp.globalCompositeOperation = "screen";
 //World Parameters
 
 
-const MAX_PARTICLES = 200;
+const MAX_PARTICLES = 500;
 
 //Physical constants
 let mu_0 = Math.PI*4.0e-7; //magnetic permeability of vacuum
@@ -52,11 +52,11 @@ let I_coils = 0;
 
 
 //time slowdown factor
-let time_slowdown = 1e-6;
+let time_slowdown = 1e-8;
 
 
 //number of calculation cycles per frame
-let physics_steps = 10000;
+let physics_steps = 10;
 
 //screen equation calculation
 function calculate_screen_equation () {
@@ -357,7 +357,7 @@ let spots = [];
 
 
 let particle_release_timer = 0;
-let particle_release_delay = 1; //how many frames to wait before releasing a particle. This will eventually be dictated by a filament current as a per-second rate
+let particle_release_delay = 2; //how many frames to wait before releasing a particle. This will eventually be dictated by a filament current as a per-second rate
 let dt = (1/60)*time_slowdown/physics_steps;
 
 let screen_params = calculate_screen_equation();
