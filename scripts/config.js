@@ -1,4 +1,7 @@
 //World Parameters
+const view_width = 0.13 //metres
+const view_height = 0.10// metres
+
 const MAX_PARTICLES = 500;
 const MAX_VOLTAGE = 5000;
 const MAX_CURRENT = 3;
@@ -9,10 +12,16 @@ let q_e = 1.6e-19; //electronic charge, C
 let m_e = 9.11e-31; //electronic mass, m
 
 //Physical construction
+let exp_region_width = 0.12 // width in metres of the region in which the fields are approximately uniform
+let exp_region_height = 0.052 // height in metres of the region in which there are approx. uniform fields. This'll be about the same as the plate separation.
+let d_plates = 0.052; // separation of screen plates, metres
+let l_screen = 0.09; //length of screen, metres
+let margin = 0.5*(exp_region_width - l_screen); //metres
+let x_screen_axis = 0.07; //x-position of central axis of screen, metres 
+
 let R_coils = 0.07; // coil radius, m
 let n_coils = 320; // number of turns in coil
-let d_plates = 0.05; // separation of screen plates, metres
-let l_screen = 0.10; //length of screen, metres
+
 let aspect_ratio = l_screen/d_plates;
 let a_screen = 0.1; //angle of rotation of screen about vertical axis through centres of plates, degrees
 let pos_injection = {x:0, y: 0.0, z:0}; //position in plate region where particles enter
@@ -22,7 +31,7 @@ let dir_injection = {x: Math.cos(toRadians(alt_injection))*Math.cos(toRadians(az
 let pos_variability = {x:0, y: 0.0002, z: 0.00017};
 let direction_variability = {x:0.00, y:0.00, z: 0.000};
 let speed_variability = 0.02;
-let phosphor_persistence = 4; //seconds for a spot to remain on the screen
+let phosphor_persistence = 4; //seconds in real time for a spot to remain on the screen
 
 //coordinate setup for 'experiment region'. Its z-extent is the same as the distance between the plates.
 let exp_region = {
