@@ -202,8 +202,22 @@ let particles = [];
 let spots = [];
 
 let screen_params = calculate_screen_equation();
-let screen_display_dimensions = {};
+let screen_display_dimensions = {x: 0, y: 0};
+for(let dir in screen_region) {
+    if(dir != 'z') {
+        screen_display_dimensions[dir] = {min: 0, max: 0};
+        let min_rel = map_p5(screen_region[dir].min, display_region[dir].min, display_region[dir].max, 0, 1);
+        let max_rel = map_p5(screen_region[dir].max, display_region[dir].min, display_region[dir].max, 0, 1);
+        screen_display_dimensions[dir].min = min_rel;
+        screen_display_dimensions[dir].max = max_rel;
+    }
+}
+screen_display_dimensions.x.min *= ctx_exp.canvas.width;
+screen_display_dimensions.x.max *= ctx_exp.canvas.width;
+screen_display_dimensions.y.min *= ctx_exp.canvas.height;
+screen_display_dimensions.y.max *= ctx_exp.canvas.height;
 
+console.log(screen_display_dimensions);
 
 
 
@@ -211,6 +225,9 @@ function animate () {
 
     ctx_exp.clearRect(0,0, canvas_exp.width, canvas_exp.height);
     ctx_exp.beginPath();
+    ctx_exp.strokeStyle = 'rgb(255,255,255)';
+    ctx_exp.rect(screen_display_dimensions.x.min, screen_display_dimensions.y.min, screen_display_dimensions.x.max - screen_display_dimensions.x.min, screen_display_dimensions.y.max - screen_display_dimensions.y.min);
+    ctx_exp.stroke();
 
 
     if (particle_release_timer == 0 && V_accelerator > 0) {
