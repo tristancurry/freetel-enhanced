@@ -64,7 +64,7 @@ Particle.prototype.render = function (ctx = ctx_exp) {
     ///first, get the natural position as a percentage of screen position.
     let pos_rel = {x:0, y:0, z:0};
     for (let dir in pos_rel) {
-        pos_rel[dir] = map_p5(this.pos[dir], exp_region[dir].min, exp_region[dir].max, 0, 1);
+        pos_rel[dir] = map_p5(this.pos[dir], display_region[dir].min, display_region[dir].max, 0, 1);
     }
     ctx.beginPath();
     ctx.strokeStyle = 'rgb(255,255,255)';

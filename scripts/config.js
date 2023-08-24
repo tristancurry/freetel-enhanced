@@ -1,6 +1,6 @@
 //World Parameters
-const view_width = 0.13 //metres
-const view_height = 0.10// metres
+const display_width = 0.13 //metres
+const display_height = 0.10// metres
 
 const MAX_PARTICLES = 500;
 const MAX_VOLTAGE = 5000;
@@ -22,7 +22,7 @@ let x_screen_axis = 0.07; //x-position of central axis of screen, metres
 let R_coils = 0.07; // coil radius, m
 let n_coils = 320; // number of turns in coil
 
-let aspect_ratio = l_screen/d_plates;
+let aspect_ratio = display_width/display_height;
 let a_screen = 0.1; //angle of rotation of screen about vertical axis through centres of plates, degrees
 let pos_injection = {x:0, y: 0.0, z:0}; //position in plate region where particles enter
 let az_injection = 0; //azimuth angle for injection (degrees clockwise about y-axis)
@@ -33,12 +33,25 @@ let direction_variability = {x:0.00, y:0.00, z: 0.000};
 let speed_variability = 0.02;
 let phosphor_persistence = 4; //seconds in real time for a spot to remain on the screen
 
-//coordinate setup for 'experiment region'. Its z-extent is the same as the distance between the plates.
+//coordinate setup for various regions.
+let display_region = {
+    x: {min: 0, max: display_width},
+    y: {min: -0.5*display_height, max: 0.5*display_height},
+    z: {min: -0.5*display_height, max: 0.5*display_height}
+};
+
+
 let exp_region = {
-    x: {min: 0, max: l_screen},
+    x: {min: x_screen_axis - 0.5*exp_region_width, max: x_screen_axis + 0.5*exp_region_width},
+    y: {min: -0.5*display_height, max: 0.5*display_height},
+    z: {min: -0.1*d_plates, max: 0.1*d_plates}
+};
+
+let screen_region = {
+    x: {min: x_screen_axis - 0.5*l_screen*Math.cos(toRadians(a_screen)), max: x_screen_axis + 0.5*l_screen*Math.cos(toRadians(a_screen))},
     y: {min: -0.5*d_plates, max: 0.5*d_plates},
-    z: {min: -0.5*d_plates, max: 0.5*d_plates}
-}
+    z: {min: -0.1*d_plates, max: 0.1*d_plates}
+};
 
 //Initial voltages
 let V_accelerator = 1000; //where outlet is positive

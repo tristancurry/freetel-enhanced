@@ -1,6 +1,6 @@
 let canvas_exp = document.getElementById('canvas_exp');
 canvas_exp.setAttribute('width', 600);
-canvas_exp.setAttribute('height', 300);
+canvas_exp.setAttribute('height', canvas_exp.width/aspect_ratio);
 canvas_exp.style.backgroundColor = 'rgb(0,0,100)';
 
 
@@ -11,9 +11,8 @@ ctx_exp.globalCompositeOperation = "screen";
 //screen equation calculation
 function calculate_screen_equation () {
     let slope = -1*Math.tan(toRadians(a_screen));
-    let intercept = -1*slope*l_screen/2;
+    let intercept = -1*slope*x_screen_axis;
     return {slope, intercept};
-
 }
 
 //field calculations
@@ -203,11 +202,16 @@ let particles = [];
 let spots = [];
 
 let screen_params = calculate_screen_equation();
+let screen_display_dimensions = {};
+
+
 
 
 function animate () {
 
     ctx_exp.clearRect(0,0, canvas_exp.width, canvas_exp.height);
+    ctx_exp.beginPath();
+
 
     if (particle_release_timer == 0 && V_accelerator > 0) {
         let p_speed = calculate_charge_speed(V_accelerator, q_e, m_e) * (1 + speed_variability*(-0.5 + Math.random()));
@@ -233,19 +237,47 @@ function animate () {
         for (j = 0, l = particles.length; j < l; j++) {
             let particle = particles[j];
             if (particle.alive) {
-                particle.update(fieldies, dt);
-                for (let dir in exp_region) {
+                //decide which fields to apply...
+                //if outside screen region - only B
+                //if outside experiment region - nothing
+                //if far outside display region, unalive.
+                let pos_code = 0;
+                let applied_fields = {};
+
+                for (let dir in particle.pos) {
                     if(
-                        particle.pos[dir] < exp_region[dir].min - 0.02 ||
-                        particle.pos[dir] > exp_region[dir].max + 0.02
-                    ) {
-                        particle.unalive();
-                    } 
+                        particle.pos[dir] >= screen_region[dir].min &&
+                        particle.pos[dir] <= screen_region[dir].max
+                    ) {pos_code++;}
+                    if(
+                        particle.pos[dir] >= exp_region[dir].min &&
+                        particle.pos[dir] <= exp_region[dir].max
+                    ) {pos_code++;}
+                    if(
+                        particle.pos[dir] >= display_region[dir].min &&
+                        particle.pos[dir] <= display_region[dir].max
+                    ) {pos_code++;}
+                }
+
+                if(pos_code == 9) {
+                    //particle within screen region
+                    applied_fields = {...fieldies};
+                } else if (pos_code >= 6) {
+                    //particle within experiment region
+                    applied_fields = {...fieldies};
+                } else {
+                    applied_fields = {}
+                }
+                
+                particle.update(applied_fields, dt);
+
+                if(pos_code < 3) {
+                    //particle no longer in display region (plus margins)
+                    particle.unalive();
                 }
 
                 if (
-                    particle.pos.x >= (1 - Math.cos(toRadians(a_screen)))*l_screen/2 &&
-                    particle.pos.x <= (1 + Math.cos(toRadians(a_screen)))*l_screen/2 &&
+                    pos_code == 9 &&
                     particle.pos.z >= screen_params.slope*particle.pos.x + screen_params.intercept         
                 ) {
                     //back-project the particle's velocity to find out where it intercepted the screen?
