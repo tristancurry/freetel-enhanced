@@ -5,7 +5,7 @@ canvas_exp.style.backgroundColor = 'rgb(0,0,100)';
 
 
 let ctx_exp = canvas_exp.getContext('2d');
-ctx_exp.globalCompositeOperation = "screen";
+ctx_exp.globalCompositeOperation = "source-over";
 
 
 //screen equation calculation
@@ -224,10 +224,8 @@ console.log(screen_display_dimensions);
 function animate () {
 
     ctx_exp.clearRect(0,0, canvas_exp.width, canvas_exp.height);
-    ctx_exp.beginPath();
     ctx_exp.strokeStyle = 'rgb(255,255,255)';
-    ctx_exp.rect(screen_display_dimensions.x.min, screen_display_dimensions.y.min, screen_display_dimensions.x.max - screen_display_dimensions.x.min, screen_display_dimensions.y.max - screen_display_dimensions.y.min);
-    ctx_exp.stroke();
+    ctx_exp.strokeRect(screen_display_dimensions.x.min, screen_display_dimensions.y.min, screen_display_dimensions.x.max - screen_display_dimensions.x.min, screen_display_dimensions.y.max - screen_display_dimensions.y.min);
 
 
     if (particle_release_timer == 0 && V_accelerator > 0) {
@@ -309,7 +307,6 @@ function animate () {
 
 
     }
-
     for (i = 0, l = particles.length; i < l; i++) {
         if(particles[i].alive) {
             particles[i].render();
