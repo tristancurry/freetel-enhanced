@@ -5,7 +5,6 @@ canvas_exp.style.backgroundColor = 'rgb(0,0,100)';
 
 
 let ctx_exp = canvas_exp.getContext('2d');
-ctx_exp.globalCompositeOperation = "source-over";
 
 
 //screen equation calculation
@@ -219,14 +218,18 @@ screen_display_dimensions.y.max *= ctx_exp.canvas.height;
 
 console.log(screen_display_dimensions);
 
+let screenImg = document.getElementById('screenImg');
 
 
 function animate () {
 
     ctx_exp.clearRect(0,0, canvas_exp.width, canvas_exp.height);
+
+
+
     ctx_exp.strokeStyle = 'rgb(255,255,255)';
     ctx_exp.strokeRect(screen_display_dimensions.x.min, screen_display_dimensions.y.min, screen_display_dimensions.x.max - screen_display_dimensions.x.min, screen_display_dimensions.y.max - screen_display_dimensions.y.min);
-
+    ctx_exp.drawImage(screenImg, 0, 0, screenImg.width, screenImg.height, screen_display_dimensions.x.min, screen_display_dimensions.y.min, screen_display_dimensions.x.max - screen_display_dimensions.x.min, screen_display_dimensions.y.max - screen_display_dimensions.y.min);
 
     if (particle_release_timer == 0 && V_accelerator > 0) {
         let p_speed = calculate_charge_speed(V_accelerator, q_e, m_e) * (1 + speed_variability*(-0.5 + Math.random()));
@@ -312,14 +315,14 @@ function animate () {
             particles[i].render();
         }
     }
-
+    // ctx_exp.globalCompositeOperation = 'screen';
     for (i = 0, l = spots.length; i < l; i++) {
         if (spots[i].alive) {
             spots[i].update();
             spots[i].render();
         }
     }
-
+    // ctx_exp.globalCompositeOperation = 'source-over';
     particle_release_timer = (particle_release_timer + 1)%particle_release_delay;
 
     requestAnimationFrame(animate);

@@ -23,7 +23,7 @@ let R_coils = 0.07; // coil radius, m
 let n_coils = 320; // number of turns in coil
 
 let aspect_ratio = display_width/display_height;
-let a_screen = 0.1  ; //angle of rotation of screen about vertical axis through centres of plates, degrees
+let a_screen = 0.1; //angle of rotation of screen about vertical axis through centres of plates, degrees
 let pos_injection = {x:0, y: 0.0, z:0}; //position in plate region where particles enter
 let az_injection = 0; //azimuth angle for injection (degrees clockwise about y-axis)
 let alt_injection = 0; //altitude angle for injection (degrees ccw about z-axis)
